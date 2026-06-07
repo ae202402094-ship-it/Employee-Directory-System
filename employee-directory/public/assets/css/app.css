@@ -839,6 +839,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
    ══════════════════════════════════════════════════════════ */
 .form-layout { max-width: 760px; }
 
+/* ══════════════════════════════════════════════════════════
+   MISC
+   ══════════════════════════════════════════════════════════ */
 .text-right { text-align: right; }
 .text-muted { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
@@ -870,7 +873,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     :root { --sidebar-w: 220px; }
 
     .sidebar {
-        position: fixed; 
+        position: fixed;
         left: 0; top: 0;
         transform: translateX(-100%);
         z-index: 100;
