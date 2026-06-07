@@ -6,8 +6,8 @@
 define('APP_NAME',    'Employee Directory System');
 define('APP_VERSION', '1.0.0');
 define('APP_ENV',     getenv('APP_ENV') ?: 'development');  // 'development' | 'production'
-define('BASE_URL',    getenv('BASE_URL') ?: 'http://localhost/employee-directory/public');
-define('BASE_PATH',   dirname(__DIR__));
+define('BASE_URL', 'http://localhost/Employee-Directory-System/employee-directory/public');
+//define('BASE_PATH',   dirname(__DIR__));
 
 // Session
 ini_set('session.cookie_httponly', 1);

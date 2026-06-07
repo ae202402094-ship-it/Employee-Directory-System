@@ -72,7 +72,7 @@ class AuthController extends Controller {
         Auth::login($user);
 
         // Redirect to intended URL or dashboard
-        $intended = $_SESSION['intended'] ?? '/dashboard';
+        $intended = '/dashboard';
         unset($_SESSION['intended']);
         $this->redirect($intended);
     }
