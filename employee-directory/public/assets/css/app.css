@@ -839,9 +839,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
    ══════════════════════════════════════════════════════════ */
 .form-layout { max-width: 760px; }
 
-/* ══════════════════════════════════════════════════════════
-   MISC
-   ══════════════════════════════════════════════════════════ */
 .text-right { text-align: right; }
 .text-muted { color: var(--muted); font-size: 13px; line-height: 1.6; }
 
