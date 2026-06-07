@@ -244,4 +244,43 @@ class EmployeeController extends Controller {
         $this->flash('success', 'Employee deleted.');
         $this->redirect('/employees');
     }
+    
+   // GET /employees/export
+    public function export(): void {
+        $this->requireAuth();
+
+        // Fetch all employees with their department names using your existing model method
+        $employees = $this->employeeModel->allWithDepartment();
+
+        // Set headers for CSV download
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="employees_export_' . date('Y-m-d') . '.csv"');
+
+        // Open output stream
+        $output = fopen('php://output', 'w');
+
+        // Add CSV headers
+        fputcsv($output, ['ID', 'Employee Number', 'First Name', 'Last Name', 'Email', 'Position', 'Department', 'Status', 'Hire Date']);
+
+        // Add data rows
+        foreach ($employees as $emp) {
+            fputcsv($output, [
+                $emp['id'],
+                $emp['employee_number'],
+                $emp['first_name'],
+                $emp['last_name'],
+                $emp['email'],
+                $emp['position'] ?? '—',
+                $emp['department_name'] ?? '—',
+                $emp['status'],
+                $emp['hire_date'] ?? '—'
+            ]);
+        }
+
+        fclose($output);
+        exit;
+    }
 }
+
+
+

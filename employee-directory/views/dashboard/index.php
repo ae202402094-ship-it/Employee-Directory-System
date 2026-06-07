@@ -14,7 +14,7 @@
 
         <div class="stat-card stat-green">
             <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div class="stat-info">
                 <span class="stat-value"><?= number_format($stats['active_employees']) ?></span>
@@ -66,7 +66,9 @@
                 <ul class="recent-list">
                     <?php foreach ($recentEmployees as $emp): ?>
                     <li class="recent-item">
-                        <div class="emp-avatar"><?= strtoupper(substr($emp['first_name'], 0, 1) . substr($emp['last_name'], 0, 1)) ?></div>
+                        <div class="emp-avatar">
+                            <?= strtoupper(substr($emp['first_name'], 0, 1) . substr($emp['last_name'], 0, 1)) ?>
+                        </div>
                         <div class="emp-info">
                             <span class="emp-name">
                                 <a href="<?= BASE_URL ?>/employees/<?= $emp['id'] ?>">
@@ -75,7 +77,7 @@
                             </span>
                             <span class="emp-meta"><?= htmlspecialchars($emp['position'] ?? '—') ?> · <?= htmlspecialchars($emp['department_name'] ?? '—') ?></span>
                         </div>
-                        <span class="badge badge-<?= $emp['status'] ?>"><?= $emp['status'] ?></span>
+                        <span class="badge badge-<?= $emp['status'] ?>"><?= ucfirst($emp['status']) ?></span>
                     </li>
                     <?php endforeach; ?>
                     <?php if (empty($recentEmployees)): ?>
@@ -89,61 +91,71 @@
 </div>
 
 <script>
-// Department chart
 (function() {
     const deptData = <?= json_encode($deptBreakdown) ?>;
     const labels   = deptData.map(d => d.department);
     const values   = deptData.map(d => parseInt(d.total));
-    const colors   = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2'];
+    const colors   = ['#4f46e5','#10b981','#f59e0b','#ef4444','#7c3aed','#0891b2','#db2777'];
 
     const canvas = document.getElementById('deptChart');
-    if (!canvas || !deptData.length) return;
+    if (!canvas || !deptData.length) {
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth || 400;
+            canvas.height = 260;
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '14px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No department data yet.', canvas.width / 2, 130);
+        }
+        return;
+    }
 
-    const ctx = canvas.getContext('2d');
-    const total = values.reduce((a, b) => a + b, 0);
-    const W = canvas.offsetWidth || 400;
-    const H = 260;
+    const ctx    = canvas.getContext('2d');
+    const W      = canvas.offsetWidth || 400;
+    const H      = 260;
     canvas.width  = W;
     canvas.height = H;
 
-    // Simple horizontal bar chart
-    const barH   = 28;
-    const gap    = 12;
-    const labelW = 120;
+    const barH   = 30;
+    const gap    = 14;
+    const labelW = 130;
     const padX   = 16;
-    const padY   = 20;
+    const padY   = 12;
     const maxVal = Math.max(...values, 1);
 
     ctx.clearRect(0, 0, W, H);
-    ctx.font = '500 13px DM Sans, sans-serif';
 
     labels.forEach((label, i) => {
         const y       = padY + i * (barH + gap);
-        const barMaxW = W - labelW - padX * 2 - 40;
+        const barMaxW = W - labelW - padX * 2 - 44;
         const barW    = (values[i] / maxVal) * barMaxW;
         const color   = colors[i % colors.length];
 
         // Label
         ctx.fillStyle = '#64748b';
+        ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(label.length > 14 ? label.slice(0, 13) + '…' : label, labelW, y + barH / 2 + 5);
+        const shortLabel = label.length > 16 ? label.slice(0, 15) + '…' : label;
+        ctx.fillText(shortLabel, labelW, y + barH / 2 + 4.5);
 
-        // Bar background
+        // Background track
         ctx.fillStyle = '#f1f5f9';
         ctx.beginPath();
-        ctx.roundRect(labelW + padX, y, barMaxW, barH, 6);
+        ctx.roundRect(labelW + padX, y, barMaxW, barH, 7);
         ctx.fill();
 
-        // Bar fill
+        // Colored bar
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.roundRect(labelW + padX, y, Math.max(barW, 6), barH, 6);
+        ctx.roundRect(labelW + padX, y, Math.max(barW, 8), barH, 7);
         ctx.fill();
 
-        // Value label
+        // Value
         ctx.fillStyle = '#1e293b';
+        ctx.font = '600 12.5px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(values[i], labelW + padX + Math.max(barW, 6) + 8, y + barH / 2 + 5);
+        ctx.fillText(values[i], labelW + padX + Math.max(barW, 8) + 9, y + barH / 2 + 4.5);
     });
 })();
 </script>

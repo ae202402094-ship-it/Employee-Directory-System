@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title ?? 'App') ?> — <?= APP_NAME ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
 </head>
 <body class="app-body">
@@ -23,12 +23,12 @@
     <nav class="sidebar-nav">
         <a href="<?= BASE_URL ?>/dashboard"
            class="nav-item <?= str_contains($_SERVER['REQUEST_URI'], '/dashboard') ? 'active' : '' ?>">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
             Dashboard
         </a>
 
         <a href="<?= BASE_URL ?>/employees"
-           class="nav-item <?= str_contains($_SERVER['REQUEST_URI'], '/employees') ? 'active' : '' ?>">
+           class="nav-item <?= (str_contains($_SERVER['REQUEST_URI'], '/employees') && !str_contains($_SERVER['REQUEST_URI'], '/users')) ? 'active' : '' ?>">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Employees
         </a>
@@ -71,14 +71,19 @@
         </button>
         <h1 class="page-title"><?= htmlspecialchars($title ?? '') ?></h1>
         <div class="topbar-right">
-            <span class="topbar-date"><?= date('F j, Y') ?></span>
+            <button class="topbar-search-btn" id="openCmdPalette" title="Quick search (Ctrl+K)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Search
+                <span class="topbar-kbd">Ctrl K</span>
+            </button>
+            <span class="topbar-date"><?= date('M j, Y') ?></span>
         </div>
     </header>
 
     <!-- Flash Message -->
     <?php if (!empty($_SESSION['flash'])): ?>
         <?php $flash = $_SESSION['flash']; unset($_SESSION['flash']); ?>
-        <div class="flash flash-<?= $flash['type'] ?>" id="flashMsg">
+        <div class="flash flash-<?= htmlspecialchars($flash['type']) ?>" id="flashMsg">
             <?= htmlspecialchars($flash['message']) ?>
             <button onclick="this.parentElement.remove()" class="flash-close">×</button>
         </div>
@@ -92,22 +97,21 @@
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-
-<div class="cmd-palette-overlay" id="cmdPalette" style="display: none;">
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdPalette" style="display:none;">
     <div class="cmd-palette-box">
         <div class="cmd-palette-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="cmdInput" placeholder="Search employees by name, number, or position..." autocomplete="off">
-            <span class="cmd-hint">ESC to close</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="cmdInput" placeholder="Search employees by name, number, or position…" autocomplete="off">
+            <span class="cmd-hint">ESC</span>
         </div>
         <div class="cmd-palette-results" id="cmdResults">
-            <div class="cmd-empty">Type to start searching...</div>
+            <div class="cmd-empty">Type to start searching…</div>
         </div>
     </div>
 </div>
 
 <script>const BASE_URL = '<?= BASE_URL ?>';</script>
-
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 </body>
 </html>

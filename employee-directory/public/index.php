@@ -46,11 +46,12 @@ $router->get('/logout', 'AuthController@logout');
 $router->get('/',          'DashboardController@index');
 $router->get('/dashboard', 'DashboardController@index');
 
-// Employees
+// Employees — IMPORTANT: static/literal routes MUST come before wildcard {id} routes
 $router->get('/employees',               'EmployeeController@index');
 $router->get('/employees/create',        'EmployeeController@create');
 $router->post('/employees/store',        'EmployeeController@store');
 $router->get('/employees/search',        'EmployeeController@search');
+$router->get('/employees/export',        'EmployeeController@export');   // ← MOVED above {id}
 $router->get('/employees/{id}',          'EmployeeController@show');
 $router->get('/employees/{id}/edit',     'EmployeeController@edit');
 $router->post('/employees/{id}/update',  'EmployeeController@update');
@@ -75,8 +76,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 $uri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Strip subfolder prefix if app is not at server root
-// e.g. if hosted at /employee-directory/public, strip that prefix
-$scriptDir = dirname($_SERVER['SCRIPT_NAME']); // e.g. /employee-directory/public
+$scriptDir = dirname($_SERVER['SCRIPT_NAME']);
 if ($scriptDir !== '/' && strpos($uri, $scriptDir) === 0) {
     $uri = substr($uri, strlen($scriptDir));
 }

@@ -31,6 +31,7 @@ class DashboardController extends Controller {
             'new_this_month'   => $this->employeeModel->countNewThisMonth(),
         ];
 
+        // This uses the existing logic in your Employee Model
         $deptBreakdown  = $this->employeeModel->countPerDepartment();
         $recentEmployees = $this->employeeModel->recent(5);
 

@@ -16,20 +16,17 @@ class AuthController extends Controller {
         $this->userModel = new User();
     }
 
-    // GET /login
     public function loginForm(): void {
-        Middleware::guest(); // redirect away if already logged in
+        Middleware::guest();
         $this->view('auth.login', ['layout' => 'auth', 'title' => 'Login']);
     }
 
-    // POST /login
     public function login(): void {
         CSRF::protect();
 
         $email    = $this->input('email');
-        $password = $_POST['password'] ?? ''; // don't sanitize password before verify
+        $password = $_POST['password'] ?? ''; 
 
-        // Validate
         $validator = new Validator(['email' => $email, 'password' => $password]);
         $validator->validate([
             'email'    => 'required|email',
@@ -46,7 +43,6 @@ class AuthController extends Controller {
             return;
         }
 
-        // Find user
         $user = $this->userModel->findWithRole($email);
 
         if (!$user || !Auth::verify($password, $user['password'])) {
@@ -63,21 +59,18 @@ class AuthController extends Controller {
             $this->view('auth.login', [
                 'layout'  => 'auth',
                 'title'   => 'Login',
-                'errors'  => ['auth' => ['Your account has been deactivated. Contact your administrator.']],
+                'errors'  => ['auth' => ['Your account has been deactivated.']],
                 'old'     => ['email' => $email],
             ]);
             return;
         }
 
         Auth::login($user);
-
-        // Redirect to intended URL or dashboard
-        $intended = '/dashboard';
+        $intended = $_SESSION['intended'] ?? '/dashboard';
         unset($_SESSION['intended']);
         $this->redirect($intended);
     }
 
-    // GET /logout
     public function logout(): void {
         Auth::logout();
         $this->redirect('/login');
