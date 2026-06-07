@@ -116,3 +116,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
+
+// ── Modal Controls ──────────────────────────────────────────
+window.openModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden'; // Stops the background from scrolling
+    }
+};
+
+window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = ''; // Restores scrolling
+    }
+};
+
+// Allow closing modals by pressing the Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const openModals = document.querySelectorAll('.modal.open');
+        openModals.forEach(modal => {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+    }
+
+    // Add this to the very bottom of public/assets/js/app.js
+window.openModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+};
+});
