@@ -181,7 +181,22 @@ class EmployeeController extends Controller {
             return;
         }
 
-       // 1. Generate a secure QR Token and a username
+        // Process profile picture upload if any
+        $uploadResult = $this->handleImageUpload();
+        if ($uploadResult === false) {
+            $this->view('employees.create', [
+                'title'       => 'Add Employee',
+                'departments' => $this->deptModel->all('name', 'ASC'),
+                'nextNumber'  => $data['employee_number'],
+                'errors'      => ['profile_picture' => ['Invalid image. Must be JPG/PNG/WEBP under 2MB.']],
+                'old'         => $data,
+            ]);
+            return;
+        } elseif ($uploadResult !== null) {
+            $data['profile_picture'] = $uploadResult;
+        }
+
+        // 1. Generate a secure QR Token and a username
         $loginToken = bin2hex(random_bytes(20));
         $username = strtolower(explode('@', $data['email'])[0]) . rand(10, 99);
 
@@ -198,6 +213,7 @@ class EmployeeController extends Controller {
         $data['user_id'] = $userId;
         $this->employeeModel->create($data);
         $this->flash('success', 'Employee added successfully.');
+        $this->redirect('/employees');
     }
 
     // GET /employees/{id}/edit

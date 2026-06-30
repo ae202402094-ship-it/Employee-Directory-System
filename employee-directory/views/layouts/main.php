@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/app.css">
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>const BASE_URL = '<?= BASE_URL ?>';</script>
 </head>
 <body class="app-body">
 
@@ -113,7 +114,6 @@
     </div>
 </div>
 
-<script>const BASE_URL = '<?= BASE_URL ?>';</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 </body>
 </html>

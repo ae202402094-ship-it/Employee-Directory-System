@@ -13,6 +13,19 @@ $err = fn(string $key) => !empty($errors[$key]) ? '<span class="form-error">' . 
 $grp = fn(string $key) => !empty($errors[$key]) ? 'form-group has-error' : 'form-group';
 ?>
 
+<?php if (!empty($errors)): ?>
+<div style="margin-bottom: 24px; padding: 16px; border-radius: var(--r-md); background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 14px;">
+    <strong style="display: block; margin-bottom: 8px;">Please correct the errors below:</strong>
+    <ul style="margin: 0; padding-left: 20px; line-height: 1.6;">
+        <?php foreach ($errors as $field => $errs): ?>
+            <?php foreach ($errs as $error): ?>
+                <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+        <?php endforeach; ?>
+    </ul>
+</div>
+<?php endif; ?>
+
 <form action="<?= $action ?>" method="POST" enctype="multipart/form-data" novalidate>
     <?= CSRF::field() ?>
     <input type="hidden" name="ip_address" value="<?= $_SERVER['REMOTE_ADDR'] ?>">
@@ -72,9 +85,44 @@ $grp = fn(string $key) => !empty($errors[$key]) ? 'form-group has-error' : 'form
         </div>
     </div>
 
-   <form action="<?= $action ?>" method="POST" enctype="multipart/form-data" novalidate>
-    <?= CSRF::field() ?>
-    <input type="hidden" name="ip_address" value="<?= $_SERVER['REMOTE_ADDR'] ?>">
+    <div class="form-section-title">Employment & Contact Details</div>
+    <div class="form-row">
+        <div class="<?= $grp('email') ?>">
+            <label class="form-label">Email Address <span class="required">*</span></label>
+            <input type="email" name="email" class="form-control" value="<?= $val('email', $employee['email'] ?? '') ?>" required>
+            <?= $err('email') ?>
+        </div>
+        <div class="<?= $grp('phone') ?>">
+            <label class="form-label">Phone Number</label>
+            <input type="text" name="phone" class="form-control" value="<?= $val('phone', $employee['phone'] ?? '') ?>">
+            <?= $err('phone') ?>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="<?= $grp('position') ?>">
+            <label class="form-label">Position</label>
+            <input type="text" name="position" class="form-control" value="<?= $val('position', $employee['position'] ?? '') ?>" placeholder="e.g. Software Engineer">
+            <?= $err('position') ?>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Department</label>
+            <select name="department_id" class="form-control form-select">
+                <option value="">Select Department</option>
+                <?php foreach ($departments as $dept): ?>
+                <option value="<?= $dept['id'] ?>" <?= ($old['department_id'] ?? $employee['department_id'] ?? '') == $dept['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($dept['name']) ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="<?= $grp('hire_date') ?>">
+            <label class="form-label">Hire Date</label>
+            <input type="date" name="hire_date" class="form-control" value="<?= $val('hire_date', $employee['hire_date'] ?? '') ?>">
+            <?= $err('hire_date') ?>
+        </div>
+    </div>
 
     <div class="form-section-title">Address Information</div>
     <div class="form-row">
@@ -102,7 +150,6 @@ $grp = fn(string $key) => !empty($errors[$key]) ? 'form-group has-error' : 'form
         <a href="<?= BASE_URL ?>/employees" class="btn btn-ghost">Cancel</a>
         <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Save Changes' : 'Add Employee' ?></button>
     </div>
-</form>
 
 <script src="<?= BASE_URL ?>/assets/js/ph-address-selector.js"></script>
 </form>

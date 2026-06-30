@@ -36,4 +36,15 @@ class Department extends Model {
         );
         return ((int)($result['cnt'] ?? 0)) > 0;
     }
+
+    // Get active and inactive employees in a specific department
+    public function getMembers(int $deptId): array {
+        return $this->query(
+            "SELECT id, first_name, last_name, position, profile_picture, employee_number, email, status 
+               FROM employees 
+              WHERE department_id = ?
+              ORDER BY CASE WHEN status = 'active' THEN 0 ELSE 1 END, first_name ASC, last_name ASC",
+            [$deptId]
+        );
+    }
 }

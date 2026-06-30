@@ -36,3 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
         initAddressSelector();
     }
 });
+
+// Global Modal Helpers
+window.openModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeModal = function(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+};

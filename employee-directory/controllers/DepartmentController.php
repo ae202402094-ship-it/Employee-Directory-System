@@ -20,6 +20,11 @@ class DepartmentController extends Controller {
         $this->requireAuth();
 
         $departments = $this->deptModel->allWithCount();
+        foreach ($departments as &$dept) {
+            $dept['members'] = $this->deptModel->getMembers((int)$dept['id']);
+        }
+        unset($dept);
+
         $this->view('departments.index', [
             'title'       => 'Departments',
             'departments' => $departments,
