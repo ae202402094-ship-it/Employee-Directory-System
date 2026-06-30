@@ -32,6 +32,17 @@ class Employee extends Model {
         );
     }
 
+    // Find employee by user_id
+    public function findByUserId(int $userId): ?array {
+        return $this->queryOne(
+            "SELECT e.*, d.name AS department_name
+               FROM employees e
+               LEFT JOIN departments d ON d.id = e.department_id
+              WHERE e.user_id = ?",
+            [$userId]
+        );
+    }
+
     // Search by name, employee number, or position
     public function search(string $term, ?string $status = null, ?int $departmentId = null): array {
         $term  = '%' . $term . '%';
@@ -161,7 +172,7 @@ class Employee extends Model {
     // MAP TRACKER: Get all recent locations for the map dashboard
     public function getAllLocations(): array {
         return $this->query(
-            "SELECT e.id, e.first_name, e.last_name, e.profile_picture, e.latitude, e.longitude, e.availability_status, e.location_updated_at, d.name AS department_name
+            "SELECT e.id, e.user_id, e.first_name, e.last_name, e.profile_picture, e.latitude, e.longitude, e.availability_status, e.location_updated_at, d.name AS department_name
              FROM employees e
              LEFT JOIN departments d ON d.id = e.department_id
              WHERE e.latitude IS NOT NULL AND e.longitude IS NOT NULL"
@@ -210,10 +221,75 @@ class Employee extends Model {
     }
 
     // Insert new certificate record
-    public function addCertificateRecord(int $employeeId, string $certificateName, string $issuingOrganization, string $issueDate): bool {
+    public function addCertificateRecord(int $employeeId, string $name, string $org, string $date): bool {
         return $this->execute(
             "INSERT INTO employee_certificates (employee_id, certificate_name, issuing_organization, issue_date) VALUES (?, ?, ?, ?)",
-            [$employeeId, $certificateName, $issuingOrganization, $issueDate]
+            [$employeeId, $name, $org, $date]
+        );
+    }
+
+    // Get members of a department
+    public function getMembersByDepartment(int $deptId): array {
+        return $this->query(
+            "SELECT e.*, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.department_id = ? ORDER BY e.last_name ASC",
+            [$deptId]
+        );
+    }
+
+    // Get recent employees of a department
+    public function getRecentByDepartment(int $deptId, int $limit = 5): array {
+        return $this->query(
+            "SELECT e.*, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.department_id = ? ORDER BY e.created_at DESC LIMIT ?",
+            [$deptId, $limit]
+        );
+    }
+
+    // Get locations of a department
+    public function getLocationsByDepartment(int $deptId): array {
+        return $this->query(
+            "SELECT e.id, e.user_id, e.first_name, e.last_name, e.profile_picture, e.latitude, e.longitude, e.availability_status, e.location_updated_at, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.department_id = ? AND e.latitude IS NOT NULL AND e.longitude IS NOT NULL",
+            [$deptId]
+        );
+    }
+
+    // Get department statistics
+    public function getDepartmentStats(int $deptId): array {
+        $total = $this->queryOne("SELECT COUNT(*) AS cnt FROM employees WHERE department_id = ?", [$deptId]);
+        $active = $this->queryOne("SELECT COUNT(*) AS cnt FROM employees WHERE department_id = ? AND status = 'active'", [$deptId]);
+        return [
+            'total_employees' => (int)($total['cnt'] ?? 0),
+            'active_employees' => (int)($active['cnt'] ?? 0)
+        ];
+    }
+
+    // Get standard employee colleagues (team members)
+    public function getTeamMembers(int $deptId, int $excludeId): array {
+        return $this->query(
+            "SELECT e.*, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.department_id = ? AND e.id != ? ORDER BY e.last_name ASC",
+            [$deptId, $excludeId]
+        );
+    }
+
+    // Insert new skill record
+    public function addSkillRecord(int $employeeId, string $name, string $proficiency): bool {
+        return $this->execute(
+            "INSERT INTO employee_skills (employee_id, skill_name, proficiency) VALUES (?, ?, ?)",
+            [$employeeId, $name, $proficiency]
+        );
+    }
+
+    // Get employees by availability status
+    public function getEmployeesByAvailability(string $status): array {
+        return $this->query(
+            "SELECT e.*, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.availability_status = ? ORDER BY e.last_name ASC",
+            [$status]
+        );
+    }
+    
+    // Get employees who are currently on leave, vacation, or holiday
+    public function getEmployeesOnLeave(): array {
+        return $this->query(
+            "SELECT e.*, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.availability_status IN ('on-leave', 'vacation', 'holiday') ORDER BY e.last_name ASC"
         );
     }
 }

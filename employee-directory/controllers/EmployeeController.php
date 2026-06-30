@@ -142,8 +142,12 @@ class EmployeeController extends Controller {
             'address'         => $this->input('address'),
             'bio'             => $this->input('bio'),
             'quote'           => $this->input('quote'),
-            'barangay' => $this->input('barangay'),
-    'city'     => $this->input('city'),
+            'barangay'        => $this->input('barangay'),
+            'city'            => $this->input('city'),
+            'hobbies'         => $this->input('hobbies'),
+            'strengths'       => $this->input('strengths'),
+            'weaknesses'      => $this->input('weaknesses'),
+            'availability_status' => $this->input('availability_status', 'available'),
         ];
 
         $validator = new Validator($data);
@@ -273,11 +277,15 @@ class EmployeeController extends Controller {
             'department_id' => (int)$this->input('department_id') ?: null,
             'hire_date'     => $this->input('hire_date') ?: null,
             'status'        => $this->input('status', 'active'),
-            'address'       => $this->input('address'),
+            'address'       => $this->input('address') ?: $employee['address'],
             'bio'           => $this->input('bio'),
             'quote'         => $this->input('quote'),
-            'barangay'      => $this->input('barangay'),
-            'city'          => $this->input('city'),
+            'barangay'      => $this->input('barangay') ?: $employee['barangay'],
+            'city'          => $this->input('city') ?: $employee['city'],
+            'hobbies'       => $this->input('hobbies'),
+            'strengths'     => $this->input('strengths'),
+            'weaknesses'    => $this->input('weaknesses'),
+            'availability_status' => $this->input('availability_status') ?: $employee['availability_status'],
         ];
 
         $uploadResult = $this->handleImageUpload();
@@ -626,7 +634,41 @@ class EmployeeController extends Controller {
             'employees' => $employees,
         ]);
     }
+
+    // POST /employees/{id}/skills
+    public function addSkill(string $id): void {
+        $this->requireAuth();
+        CSRF::protect();
+        $empId = (int)$id;
+
+        $employee = $this->employeeModel->find($empId);
+        if (!$employee) {
+            $this->flash('error', 'Employee not found.');
+            $this->redirect('/employees');
+        }
+
+        // Access check
+        $isOwner = ((int)$employee['user_id'] === Auth::id());
+        if (!Auth::isHR() && !$isOwner) {
+            $this->flash('error', 'Access Denied: You cannot add skills to this profile.');
+            $this->redirect('/employees/' . $empId);
+            return;
+        }
+
+        $skillName   = $this->input('skill_name');
+        $proficiency = $this->input('proficiency', 'intermediate');
+
+        $validator = new Validator(['skill_name' => $skillName]);
+        $validator->validate(['skill_name' => 'required|max:100']);
+
+        if ($validator->fails()) {
+            $this->flash('error', $validator->firstError('skill_name'));
+            $this->redirect('/employees/' . $empId);
+            return;
+        }
+
+        $this->employeeModel->addSkillRecord($empId, $skillName, $proficiency);
+        $this->flash('success', 'Skill added successfully.');
+        $this->redirect('/employees/' . $empId);
+    }
 }
-
-
-

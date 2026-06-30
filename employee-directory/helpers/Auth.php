@@ -63,4 +63,19 @@ class Auth {
     public static function isHR(): bool {
         return in_array(self::role(), ['admin', 'hr_staff']);
     }
+
+    // Check if current user is supervisor
+    public static function isSupervisor(): bool {
+        return self::role() === 'supervisor';
+    }
+
+    // Check if current user is manager
+    public static function isManager(): bool {
+        return self::role() === 'manager';
+    }
+
+    // Check if current user is department head (Manager or Supervisor)
+    public static function isDeptHead(): bool {
+        return in_array(self::role(), ['manager', 'supervisor']);
+    }
 }

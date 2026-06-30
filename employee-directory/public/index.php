@@ -65,6 +65,7 @@ $router->get('/employees/{id}/id-card', 'EmployeeController@idCard');
 $router->post('/employees/{id}/education', 'EmployeeController@addEducation');
 $router->post('/employees/{id}/family', 'EmployeeController@addFamily');
 $router->post('/employees/{id}/certificate', 'EmployeeController@addCertificate');
+$router->post('/employees/{id}/skills', 'EmployeeController@addSkill');
 
 // Departments
 $router->get('/departments',                  'DepartmentController@index');

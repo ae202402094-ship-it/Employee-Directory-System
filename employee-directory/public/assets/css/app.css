@@ -5,53 +5,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@600;700&display=swap');
 
 :root {
-  /* Soft, organic professional palette */
-  --bg:             #f4f7f6;
+  /* Slate & Indigo Clean Modern Palette */
+  --bg:             #f8fafc;
   --surface:        #ffffff;
-  --surface-2:      #f8fafc;
+  --surface-2:      #f1f5f9;
   --border:         #e2e8f0;
   --border-strong:  #cbd5e1;
 
   /* Typography */
-  --text-primary:   #1e293b;
-  --text-secondary: #475569;
-  --text-muted:     #94a3b8;
+  --text-primary:   #0f172a;
+  --text-secondary: #334155;
+  --text-muted:     #64748b;
 
   /* Brand */
-  --brand:          #5a67d8;
-  --brand-dark:     #434190;
-  --brand-light:    #ebf4ff;
+  --brand:          #4f46e5;
+  --brand-dark:     #3730a3;
+  --brand-light:    rgba(79, 70, 229, 0.08);
 
   /* Status Colors */
-  --green:          #059669;
-  --green-bg:       #d1fae5;
+  --green:          #10b981;
+  --green-bg:       #ecfdf5;
   --green-border:   #a7f3d0;
-  --amber:          #d97706;
-  --amber-bg:       #fef3c7;
+  --amber:          #f59e0b;
+  --amber-bg:       #fffbeb;
   --amber-border:   #fde68a;
-  --red:            #dc2626;
-  --red-bg:         #fee2e2;
+  --red:            #ef4444;
+  --red-bg:         #fef2f2;
   --red-border:     #fecaca;
 
   /* Sidebar */
-  --sidebar-bg:     #1e293b;
+  --sidebar-bg:     #0f172a;
   --sidebar-w:      260px;
-  --sidebar-text:   #cbd5e1;
+  --sidebar-text:   #94a3b8;
 
   /* Layout */
   --topbar-h:       70px;
   --max-w-form:     800px;
 
   /* Soft organic shadows & radius */
-  --shadow-sm:      0 2px 4px rgba(15, 23, 42, 0.04);
-  --shadow-md:      0 4px 12px rgba(15, 23, 42, 0.06);
-  --shadow-lg:      0 12px 24px rgba(15, 23, 42, 0.08);
+  --shadow-sm:      0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md:      0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg:      0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --r-sm:           6px;
-  --r-md:           10px;
+  --r-md:           12px;
   --r-lg:           16px;
-  --r-xl:           20px;
+  --r-xl:           24px;
 
-  --t:              200ms ease-in-out;
+  --t:              250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Reset & Base ──────────────────────────────────────────── */

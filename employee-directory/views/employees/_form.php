@@ -122,27 +122,92 @@ $grp = fn(string $key) => !empty($errors[$key]) ? 'form-group has-error' : 'form
             <input type="date" name="hire_date" class="form-control" value="<?= $val('hire_date', $employee['hire_date'] ?? '') ?>">
             <?= $err('hire_date') ?>
         </div>
+        <div class="form-group">
+            <label class="form-label">Availability Status</label>
+            <select name="availability_status" class="form-control form-select">
+                <?php 
+                $statuses = [
+                    'available'   => 'Working / Available',
+                    'late'        => 'Late',
+                    'absent'      => 'Absent',
+                    'half-day'    => 'Take a Half Day',
+                    'out-of-town' => 'Out of Town (Business Reason)',
+                    'on-break'    => 'On Break',
+                    'day-off'     => 'Day Off',
+                    'on-leave'    => 'On Leave',
+                    'vacation'    => 'Vacation',
+                    'holiday'     => 'Holiday',
+                    'overtime'    => 'Overtime'
+                ];
+                foreach ($statuses as $valKey => $valLabel): 
+                ?>
+                <option value="<?= $valKey ?>" <?= ($old['availability_status'] ?? $employee['availability_status'] ?? 'available') === $valKey ? 'selected' : '' ?>>
+                    <?= $valLabel ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
     </div>
 
     <div class="form-section-title">Address Information</div>
+    
+    <?php if ($isEdit && (!empty($employee['barangay']) || !empty($employee['city']))): ?>
+    <div style="grid-column: 1 / -1; margin-bottom: 16px; padding: 12px 16px; border-radius: var(--r-md); background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.1); font-size: 13.5px; color: var(--text-secondary);">
+        <strong>Currently Saved Address:</strong> 
+        <?= htmlspecialchars(implode(', ', array_filter([$employee['address'] ?? null, $employee['barangay'] ?? null, $employee['city'] ?? null]))) ?>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Only select from the dropdowns below if you want to change this address.</div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Hidden inputs for text names populated by JS -->
+    <input type="hidden" name="region" id="region-text" value="">
+    <input type="hidden" name="province" id="province-text" value="">
+    <input type="hidden" name="city" id="city-text" value="">
+    <input type="hidden" name="barangay" id="barangay-text" value="">
+
+    <div class="form-row">
+        <div class="form-group" style="width: 100%;">
+            <label class="form-label">Street Address</label>
+            <textarea name="address" class="form-control" rows="2" placeholder="e.g. House No., Street Name, Subdivision"><?= htmlspecialchars($old['address'] ?? $employee['address'] ?? '') ?></textarea>
+        </div>
+    </div>
+
     <div class="form-row">
         <div class="form-group">
             <label class="form-label">Region</label>
-            <select name="region" id="region" class="form-control form-select"><option value="">Select Region</option></select>
+            <select name="region_code" id="region" class="form-control form-select"><option value="">Select Region</option></select>
         </div>
         <div class="form-group">
             <label class="form-label">Province</label>
-            <select name="province" id="province" class="form-control form-select"><option value="">Select Province</option></select>
+            <select name="province_code" id="province" class="form-control form-select"><option value="">Select Province</option></select>
         </div>
     </div>
     <div class="form-row">
         <div class="form-group">
             <label class="form-label">City / Municipality</label>
-            <select name="city" id="city" class="form-control form-select"><option value="">Select City/Mun</option></select>
+            <select name="city_code" id="city" class="form-control form-select"><option value="">Select City/Mun</option></select>
         </div>
         <div class="form-group">
             <label class="form-label">Barangay</label>
-            <select name="barangay" id="barangay" class="form-control form-select"><option value="">Select Barangay</option></select>
+            <select name="barangay_code" id="barangay" class="form-control form-select"><option value="">Select Barangay</option></select>
+        </div>
+    </div>
+
+    <div class="form-section-title">Talent & Personal Profile</div>
+    <div class="form-row">
+        <div class="form-group" style="width: 100%;">
+            <label class="form-label">Hobbies</label>
+            <textarea name="hobbies" class="form-control" rows="2" placeholder="e.g. Reading, cycling, photography"><?= htmlspecialchars($old['hobbies'] ?? $employee['hobbies'] ?? '') ?></textarea>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label class="form-label">Strengths (What you are good at)</label>
+            <textarea name="strengths" class="form-control" rows="2" placeholder="e.g. Public speaking, leadership, critical thinking"><?= htmlspecialchars($old['strengths'] ?? $employee['strengths'] ?? '') ?></textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Weaknesses</label>
+            <textarea name="weaknesses" class="form-control" rows="2" placeholder="e.g. Delegating tasks, public speaking anxiety"><?= htmlspecialchars($old['weaknesses'] ?? $employee['weaknesses'] ?? '') ?></textarea>
         </div>
     </div>
 

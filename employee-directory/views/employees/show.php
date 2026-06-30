@@ -64,7 +64,16 @@
                 </div>
                 <div>
                     <span style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Address</span>
-                    <span style="font-size: 14px;"><?= htmlspecialchars($employee['address'] ?? '—') ?></span>
+                    <span style="font-size: 14px;">
+                        <?php 
+                        $fullAddress = array_filter([
+                            $employee['address'] ?? null,
+                            $employee['barangay'] ?? null,
+                            $employee['city'] ?? null
+                        ]);
+                        echo htmlspecialchars(!empty($fullAddress) ? implode(', ', $fullAddress) : '—');
+                        ?>
+                    </span>
                 </div>
             </div>
         </div>
@@ -116,63 +125,126 @@
             </div>
         </div>
 
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-    <h3 class="card-title">Education</h3>
-    <?php if ($canEdit): ?><button type="button" onclick="openModal('addEducationModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
-</div>
-                <div class="card-body">
-                    <?php if (empty($education)): ?>
-                        <div style="text-align: center; color: var(--text-muted); font-size: 13px;">No education records.</div>
-                    <?php else: ?>
-                        <?php foreach ($education as $edu): ?>
-                        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
-                            <div style="font-weight: 600; font-size: 14px;"><?= htmlspecialchars($edu['degree']) ?></div>
-                            <div style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($edu['institution']) ?></div>
-                            <div style="font-size: 12px; color: var(--text-muted);">Class of <?= htmlspecialchars($edu['year_graduated']) ?></div>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Education</h3>
+                <?php if ($canEdit): ?><button type="button" onclick="openModal('addEducationModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
             </div>
+            <div class="card-body">
+                <?php if (empty($education)): ?>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px;">No education records.</div>
+                <?php else: ?>
+                    <?php foreach ($education as $edu): ?>
+                    <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
+                        <div style="font-weight: 600; font-size: 14px;"><?= htmlspecialchars($edu['degree']) ?></div>
+                        <div style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($edu['institution']) ?></div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Class of <?= htmlspecialchars($edu['year_graduated']) ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
 
-           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-    <h3 class="card-title">Family Background</h3>
-    <?php if ($canEdit): ?><button type="button" onclick="openModal('addFamilyModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
-</div>
-                <div class="card-body">
-                    <?php if (empty($family)): ?>
-                        <div style="text-align: center; color: var(--text-muted); font-size: 13px;">No family records.</div>
-                    <?php else: ?>
-                        <?php foreach ($family as $fam): ?>
-                        <div style="margin-bottom: 16px;">
-                            <div style="font-weight: 600; font-size: 14px;"><?= htmlspecialchars($fam['full_name']) ?> <span style="font-weight: normal; color: var(--text-muted); font-size: 12px;">(<?= htmlspecialchars($fam['relation']) ?>)</span></div>
-                            <div style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($fam['contact_number'] ?? '') ?></div>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Family Background</h3>
+                <?php if ($canEdit): ?><button type="button" onclick="openModal('addFamilyModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
+            </div>
+            <div class="card-body">
+                <?php if (empty($family)): ?>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px;">No family records.</div>
+                <?php else: ?>
+                    <?php foreach ($family as $fam): ?>
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-weight: 600; font-size: 14px;"><?= htmlspecialchars($fam['full_name']) ?> <span style="font-weight: normal; color: var(--text-muted); font-size: 12px;">(<?= htmlspecialchars($fam['relation']) ?>)</span></div>
+                        <div style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($fam['contact_number'] ?? '') ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
         
         <div class="card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 class="card-title">Certifications & Seminars</h3>
-        <?php if ($canEdit): ?><button type="button" onclick="openModal('addCertificateModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
-    </div>
-    <div class="card-body p-0">
-        <?php if (empty($certificates)): ?>
-            <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">No certificates added yet.</div>
-        <?php else: ?>
-            <?php foreach ($certificates as $cert): ?>
-            <div style="padding: 16px 24px; border-bottom: 1px solid var(--border);">
-                <div style="font-weight: 600; font-size: 15px; color: var(--text-primary);"><?= htmlspecialchars($cert['certificate_name']) ?></div>
-                <div style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($cert['issuing_organization']) ?></div>
-                <div style="font-size: 12px; color: var(--text-muted);">Issued: <?= date('M Y', strtotime($cert['issue_date'])) ?></div>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Certifications & Seminars</h3>
+                <?php if ($canEdit): ?><button type="button" onclick="openModal('addCertificateModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
             </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
-</div>
+            <div class="card-body p-0">
+                <?php if (empty($certificates)): ?>
+                    <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px;">No certificates added yet.</div>
+                <?php else: ?>
+                    <?php foreach ($certificates as $cert): ?>
+                    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border);">
+                        <div style="font-weight: 600; font-size: 15px; color: var(--text-primary);"><?= htmlspecialchars($cert['certificate_name']) ?></div>
+                        <div style="font-size: 13px; color: var(--text-secondary);"><?= htmlspecialchars($cert['issuing_organization']) ?></div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Issued: <?= date('M Y', strtotime($cert['issue_date'])) ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Skills Section -->
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Skills & Proficiencies</h3>
+                <?php if ($canEdit): ?><button type="button" onclick="openModal('addSkillModal')" class="btn btn-ghost btn-xs">Add +</button><?php endif; ?>
+            </div>
+            <div class="card-body">
+                <?php if (empty($skills)): ?>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px 0;">No skills added yet.</div>
+                <?php else: ?>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <?php foreach ($skills as $skill): ?>
+                            <?php 
+                            $badgeClass = 'badge-secondary';
+                            if ($skill['proficiency'] === 'expert') $badgeClass = 'badge-success';
+                            elseif ($skill['proficiency'] === 'advanced') $badgeClass = 'badge-primary';
+                            elseif ($skill['proficiency'] === 'intermediate') $badgeClass = 'badge-warning';
+                            ?>
+                            <span class="badge <?= $badgeClass ?>" style="padding: 6px 12px; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px;">
+                                <?= htmlspecialchars($skill['skill_name']) ?>
+                                <span style="font-size: 10px; opacity: 0.8; font-weight: normal; text-transform: uppercase;">
+                                    (<?= htmlspecialchars($skill['proficiency']) ?>)
+                                </span>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Personal & Talent Profile Section -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Talent & Personal Profile</h3>
+            </div>
+            <div class="card-body" style="padding: 24px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="color: var(--brand); font-size: 16px;">🎨</span>
+                            <strong style="font-size: 14.5px; color: var(--text-primary);">Hobbies & Interests</strong>
+                        </div>
+                        <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; white-space: pre-wrap;"><?= htmlspecialchars($employee['hobbies'] ?: 'Not specified') ?></p>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="color: #10b981; font-size: 16px;">⚡</span>
+                            <strong style="font-size: 14.5px; color: var(--text-primary);">Key Strengths</strong>
+                        </div>
+                        <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; white-space: pre-wrap;"><?= htmlspecialchars($employee['strengths'] ?: 'Not specified') ?></p>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="color: #ef4444; font-size: 16px;">🎯</span>
+                            <strong style="font-size: 14.5px; color: var(--text-primary);">Areas of Growth (Weaknesses)</strong>
+                        </div>
+                        <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; white-space: pre-wrap;"><?= htmlspecialchars($employee['weaknesses'] ?: 'Not specified') ?></p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 </div>
@@ -311,6 +383,36 @@
             <div class="modal-footer">
                 <button type="button" onclick="closeModal('addCertificateModal')" class="btn btn-ghost">Cancel</button>
                 <button type="submit" class="btn btn-primary">Save Certificate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addSkillModal" role="dialog" aria-modal="true">
+    <div class="modal-overlay" onclick="closeModal('addSkillModal')"></div>
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Add Skill & Proficiency</h3>
+            <button type="button" onclick="closeModal('addSkillModal')" class="modal-close">×</button>
+        </div>
+        <form method="POST" action="<?= BASE_URL ?>/employees/<?= $employee['id'] ?>/skills">
+            <?= CSRF::field() ?>
+            <div class="form-group" style="padding: 0 24px; margin-top: 16px;">
+                <label class="form-label">Skill Name <span class="required">*</span></label>
+                <input type="text" name="skill_name" class="form-control" placeholder="e.g. PHP, Graphic Design, Public Speaking" required>
+            </div>
+            <div class="form-group" style="padding: 0 24px;">
+                <label class="form-label">Proficiency Level <span class="required">*</span></label>
+                <select name="proficiency" class="form-control form-select" required>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('addSkillModal')" class="btn btn-ghost">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Skill</button>
             </div>
         </form>
     </div>
