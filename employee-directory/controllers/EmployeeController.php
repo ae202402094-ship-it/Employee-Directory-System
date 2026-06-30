@@ -264,18 +264,6 @@ class EmployeeController extends Controller {
             $this->redirect('/employees');
             return;
         }
-
-
-        $uploadResult = $this->handleImageUpload();
-        if ($uploadResult === false) {
-            $this->flash('error', 'Invalid image. Must be JPG/PNG/WEBP under 2MB.');
-            $this->redirect('/employees/' . $empId . '/edit');
-            return;
-        } elseif ($uploadResult !== null) {
-            $data['profile_picture'] = $uploadResult;
-        }
-
-
         $data = [
             'first_name'    => $this->input('first_name'),
             'last_name'     => $this->input('last_name'),
@@ -286,11 +274,20 @@ class EmployeeController extends Controller {
             'hire_date'     => $this->input('hire_date') ?: null,
             'status'        => $this->input('status', 'active'),
             'address'       => $this->input('address'),
-            'bio'             => $this->input('bio'),
-            'quote'           => $this->input('quote'),
-            'barangay' => $this->input('barangay'),
-    'city'     => $this->input('city'),
+            'bio'           => $this->input('bio'),
+            'quote'         => $this->input('quote'),
+            'barangay'      => $this->input('barangay'),
+            'city'          => $this->input('city'),
         ];
+
+        $uploadResult = $this->handleImageUpload();
+        if ($uploadResult === false) {
+            $this->flash('error', 'Invalid image. Must be JPG/PNG/WEBP under 2MB.');
+            $this->redirect('/employees/' . $empId . '/edit');
+            return;
+        } elseif ($uploadResult !== null) {
+            $data['profile_picture'] = $uploadResult;
+        }
 
         $validator = new Validator($data);
         $validator->validate([
@@ -557,13 +554,76 @@ class EmployeeController extends Controller {
             $qrToken = $user['login_token'];
         }
 
-        $qrLink = $qrToken ? BASE_URL . '/qr-login?token=' . $qrToken : '';
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $host = $_SERVER['HTTP_HOST'];
+        $qrLink = $qrToken ? $protocol . $host . BASE_URL . '/qr-login?token=' . $qrToken : '';
 
         $this->view('employees.id_card', [
             'layout'   => 'print',
             'title'    => 'ID Card - ' . $employee['first_name'],
             'employee' => $employee,
             'qrLink'   => $qrLink
+        ]);
+    }
+
+    // GET /employees/print-bulk
+    public function printBulk(): void {
+        $this->requireAuth();
+        $this->requireRole('admin', 'hr_staff');
+
+        $idsString = $this->query('ids', '');
+        if (empty($idsString)) {
+            $this->flash('error', 'No employees selected for bulk print.');
+            $this->redirect('/employees');
+            return;
+        }
+
+        $ids = array_map('intval', explode(',', $idsString));
+        $employees = [];
+        
+        foreach ($ids as $empId) {
+            $employee = $this->employeeModel->findWithDepartment($empId);
+            if ($employee) {
+                // Fetch user account to get login token
+                $user = $employee['user_id'] ? $this->userModel->find($employee['user_id']) : null;
+                
+                // RETROACTIVE FIX: If employee has no account, or no token, generate it now!
+                if (!$user || empty($user['login_token'])) {
+                    $loginToken = bin2hex(random_bytes(20));
+                    
+                    if (!$user) {
+                        $username = strtolower(explode('@', $employee['email'])[0]) . rand(10, 99);
+                        if ($this->userModel->usernameExists($username)) {
+                            $username .= rand(100, 999);
+                        }
+                        $userId = $this->userModel->create([
+                            'role_id'     => 3,
+                            'username'    => $username,
+                            'email'       => $employee['email'],
+                            'password'    => Auth::hash('Employee@123'),
+                            'login_token' => $loginToken
+                        ]);
+                        $this->employeeModel->update($empId, ['user_id' => $userId]);
+                    } else {
+                        $this->userModel->update($user['id'], ['login_token' => $loginToken]);
+                    }
+                    $qrToken = $loginToken;
+                } else {
+                    $qrToken = $user['login_token'];
+                }
+
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+                $host = $_SERVER['HTTP_HOST'];
+                $employee['qrLink'] = $qrToken ? $protocol . $host . BASE_URL . '/qr-login?token=' . $qrToken : '';
+                
+                $employees[] = $employee;
+            }
+        }
+
+        $this->view('employees.print_bulk', [
+            'layout'    => 'print',
+            'title'     => 'Bulk ID Cards Printing',
+            'employees' => $employees,
         ]);
     }
 }

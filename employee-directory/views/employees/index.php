@@ -8,6 +8,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export CSV
     </a>
+    <button type="button" class="btn btn-secondary" id="printBulkBtn" style="display: none; align-items: center; gap: 8px;">
+        🖨️ Print Selected IDs (<span id="selectedCount">0</span>)
+    </button>
     <?php endif; ?>
 </div>
 
@@ -72,6 +75,9 @@
         <table class="data-table">
             <thead>
                 <tr>
+                    <?php if (Auth::isHR()): ?>
+                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllEmployees"></th>
+                    <?php endif; ?>
                     <th>Employee</th>
                     <th>Number</th>
                     <th>Position</th>
@@ -83,6 +89,9 @@
             <tbody>
                 <?php foreach ($employees as $emp): ?>
                 <tr>
+                    <?php if (Auth::isHR()): ?>
+                    <td style="text-align: center;"><input type="checkbox" class="employee-checkbox" value="<?= $emp['id'] ?>"></td>
+                    <?php endif; ?>
                     <td>
                         <div class="table-emp">
                             <div class="emp-avatar emp-avatar-sm">
@@ -120,3 +129,43 @@
     </div>
     <?php endif; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const selectAll = document.getElementById('selectAllEmployees');
+    const checkboxes = document.querySelectorAll('.employee-checkbox');
+    const printBtn = document.getElementById('printBulkBtn');
+    const countSpan = document.getElementById('selectedCount');
+
+    function updatePrintButton() {
+        const checked = document.querySelectorAll('.employee-checkbox:checked');
+        countSpan.textContent = checked.length;
+        if (checked.length > 0) {
+            printBtn.style.display = 'inline-flex';
+        } else {
+            printBtn.style.display = 'none';
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', () => {
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updatePrintButton();
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updatePrintButton);
+    });
+
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            const checked = document.querySelectorAll('.employee-checkbox:checked');
+            const ids = Array.from(checked).map(cb => cb.value).join(',');
+            if (ids) {
+                window.open(`<?= BASE_URL ?>/employees/print-bulk?ids=${ids}`, '_blank');
+            }
+        });
+    }
+});
+</script>

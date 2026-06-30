@@ -55,6 +55,7 @@ $router->get('/employees/create',        'EmployeeController@create');
 $router->post('/employees/store',        'EmployeeController@store');
 $router->get('/employees/search',        'EmployeeController@search');
 $router->get('/employees/export',        'EmployeeController@export');   // ← MOVED above {id}
+$router->get('/employees/print-bulk',    'EmployeeController@printBulk');
 $router->get('/employees/{id}',          'EmployeeController@show');
 $router->get('/employees/{id}/edit',     'EmployeeController@edit');
 $router->post('/employees/{id}/update',  'EmployeeController@update');
