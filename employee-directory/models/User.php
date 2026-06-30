@@ -72,4 +72,16 @@ class User extends Model {
         $result = $this->queryOne("SELECT COUNT(*) AS cnt FROM users WHERE is_active = 1");
         return (int)($result['cnt'] ?? 0);
     }
+
+    // Find user by their QR Login Token
+    public function findWithRoleByToken(string $token): ?array {
+        return $this->queryOne(
+            "SELECT u.*, r.name AS role_name
+               FROM users u
+               JOIN roles r ON r.id = u.role_id
+              WHERE u.login_token = ?
+              LIMIT 1",
+            [$token]
+        );
+    }
 }

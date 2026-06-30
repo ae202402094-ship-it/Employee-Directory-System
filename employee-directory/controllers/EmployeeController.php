@@ -7,15 +7,18 @@ require_once BASE_PATH . '/core/Controller.php';
 require_once BASE_PATH . '/models/Employee.php';
 require_once BASE_PATH . '/models/Department.php';
 require_once BASE_PATH . '/helpers/CSRF.php';
+require_once BASE_PATH . '/models/User.php';
 
 class EmployeeController extends Controller {
 
     private Employee   $employeeModel;
     private Department $deptModel;
+    private User       $userModel;
 
     public function __construct() {
         $this->employeeModel = new Employee();
         $this->deptModel     = new Department();
+        $this->userModel     = new User();
     }
 
     // GET /employees
@@ -68,17 +71,40 @@ class EmployeeController extends Controller {
     // GET /employees/{id}
     public function show(string $id): void {
         $this->requireAuth();
+        $empId = (int)$id;
 
-        $employee = $this->employeeModel->findWithDepartment((int)$id);
-
+        // Fetch all the different pieces of information
+        $employee     = $this->employeeModel->findWithDepartment($empId);
+        
         if (!$employee) {
             $this->flash('error', 'Employee not found.');
             $this->redirect('/employees');
         }
 
+        $education    = $this->employeeModel->getEducation($empId);
+        $skills       = $this->employeeModel->getSkills($empId);
+        $experiences  = $this->employeeModel->getExperiences($empId);
+        $certificates = $this->employeeModel->getCertificates($empId);
+        $family       = $this->employeeModel->getFamily($empId);
+        $achievements = $this->employeeModel->getAchievements($empId);
+
+        // Security check for who is viewing (Owner or HR/Admin)
+      // Security check for who is viewing (Owner or HR/Admin)
+        $isOwner = ((int)$employee['user_id'] === Auth::id());
+        $canEdit = (Auth::isHR() || $isOwner);
+
         $this->view('employees.show', [
-            'title'    => $employee['first_name'] . ' ' . $employee['last_name'],
-            'employee' => $employee,
+            'title'        => $employee['first_name'] . ' ' . $employee['last_name'],
+    
+            'employee'     => $employee,
+            'education'    => $education,
+            'skills'       => $skills,
+            'experiences'  => $experiences,
+            'certificates' => $certificates,
+            'family'       => $family,
+            'achievements' => $achievements,
+            'canEdit'      => $canEdit,
+            'isOwner'      => $isOwner   // <--- ADD THIS EXACT LINE
         ]);
     }
 
@@ -114,6 +140,10 @@ class EmployeeController extends Controller {
             'hire_date'       => $this->input('hire_date') ?: null,
             'status'          => $this->input('status', 'active'),
             'address'         => $this->input('address'),
+            'bio'             => $this->input('bio'),
+            'quote'           => $this->input('quote'),
+            'barangay' => $this->input('barangay'),
+    'city'     => $this->input('city'),
         ];
 
         $validator = new Validator($data);
@@ -151,20 +181,45 @@ class EmployeeController extends Controller {
             return;
         }
 
+       // 1. Generate a secure QR Token and a username
+        $loginToken = bin2hex(random_bytes(20));
+        $username = strtolower(explode('@', $data['email'])[0]) . rand(10, 99);
+
+        // 2. Automatically create the User account
+        $userId = $this->userModel->create([
+            'role_id'     => 3, // Role ID 3 is 'employee'
+            'username'    => $username,
+            'email'       => $data['email'],
+            'password'    => Auth::hash('Employee@123'), // Default Password given to new employees
+            'login_token' => $loginToken
+        ]);
+
+        // 3. Link the new user account to the employee profile, then save the employee
+        $data['user_id'] = $userId;
         $this->employeeModel->create($data);
         $this->flash('success', 'Employee added successfully.');
-        $this->redirect('/employees');
     }
 
     // GET /employees/{id}/edit
+   // GET /employees/{id}/edit
     public function edit(string $id): void {
         $this->requireAuth();
-        $this->requireRole('admin', 'hr_staff');
-
-        $employee = $this->employeeModel->find((int)$id);
+        
+        $empId = (int)$id;
+        $employee = $this->employeeModel->find($empId);
+        
         if (!$employee) {
             $this->flash('error', 'Employee not found.');
             $this->redirect('/employees');
+        }
+
+        // ROLE-BASED ACCESS CONTROL (RBAC): 
+        // Allow if user is HR/Admin OR if the logged-in user owns this employee profile.
+        $isOwner = ((int)$employee['user_id'] === Auth::id());
+        if (!Auth::isHR() && !$isOwner) {
+            $this->flash('error', 'Access Denied: You can only edit your own profile.');
+            $this->redirect('/employees/' . $empId);
+            return;
         }
 
         $this->view('employees.edit', [
@@ -177,7 +232,6 @@ class EmployeeController extends Controller {
     // POST /employees/{id}/update
     public function update(string $id): void {
         $this->requireAuth();
-        $this->requireRole('admin', 'hr_staff');
         CSRF::protect();
 
         $empId = (int)$id;
@@ -186,6 +240,25 @@ class EmployeeController extends Controller {
             $this->flash('error', 'Employee not found.');
             $this->redirect('/employees');
         }
+
+        // ROLE-BASED ACCESS CONTROL (RBAC) FOR SAVING
+        $isOwner = ((int)$employee['user_id'] === Auth::id());
+        if (!Auth::isHR() && !$isOwner) {
+            $this->flash('error', 'Access Denied: You can only update your own profile.');
+            $this->redirect('/employees');
+            return;
+        }
+
+
+        $uploadResult = $this->handleImageUpload();
+        if ($uploadResult === false) {
+            $this->flash('error', 'Invalid image. Must be JPG/PNG/WEBP under 2MB.');
+            $this->redirect('/employees/' . $empId . '/edit');
+            return;
+        } elseif ($uploadResult !== null) {
+            $data['profile_picture'] = $uploadResult;
+        }
+
 
         $data = [
             'first_name'    => $this->input('first_name'),
@@ -197,6 +270,10 @@ class EmployeeController extends Controller {
             'hire_date'     => $this->input('hire_date') ?: null,
             'status'        => $this->input('status', 'active'),
             'address'       => $this->input('address'),
+            'bio'             => $this->input('bio'),
+            'quote'           => $this->input('quote'),
+            'barangay' => $this->input('barangay'),
+    'city'     => $this->input('city'),
         ];
 
         $validator = new Validator($data);
@@ -279,6 +356,199 @@ class EmployeeController extends Controller {
 
         fclose($output);
         exit;
+    }
+
+    // Helper to process profile picture uploads
+    private function handleImageUpload(): string|bool|null {
+        if (!isset($_FILES['profile_picture']) || $_FILES['profile_picture']['error'] === UPLOAD_ERR_NO_FILE) {
+            return null; // No file uploaded
+        }
+        
+        $file = $_FILES['profile_picture'];
+        if ($file['error'] !== UPLOAD_ERR_OK) return false;
+
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($file['type'], $allowedTypes) || $file['size'] > 2 * 1024 * 1024) {
+            return false; // Invalid type or too large
+        }
+
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('profile_') . '.' . $ext;
+        $destPath = BASE_PATH . '/public/assets/images/profiles';
+
+        if (!is_dir($destPath)) mkdir($destPath, 0777, true);
+
+        if (move_uploaded_file($file['tmp_name'], $destPath . '/' . $filename)) {
+            return $filename;
+        }
+        return false;
+    }
+
+    // POST /employees/{id}/experience
+    public function addExperience(string $id): void {
+        $this->requireAuth();
+        CSRF::protect();
+        $empId = (int)$id;
+
+        $employee = $this->employeeModel->find($empId);
+        if (!$employee) {
+            $this->flash('error', 'Employee not found.');
+            $this->redirect('/employees');
+        }
+
+        // ROLE-BASED ACCESS CONTROL (RBAC)
+        $isOwner = ((int)$employee['user_id'] === Auth::id());
+        if (!Auth::isHR() && !$isOwner) {
+            $this->flash('error', 'Access Denied: You cannot add experiences to this profile.');
+            $this->redirect('/employees/' . $empId);
+            return;
+        }
+
+        // Gather Data
+        $companyName = $this->input('company_name');
+        $position    = $this->input('position');
+        $startDate   = $this->input('start_date');
+        $endDate     = $this->input('end_date') ?: null; // Null if empty (Present)
+        $description = $this->input('description');
+
+        // Insert directly into the new table
+      // Call the public method on the model
+        $this->employeeModel->addExperienceRecord($empId, $companyName, $position, $startDate, $endDate, $description);
+
+        $this->flash('success', 'Professional experience added successfully.');
+        $this->redirect('/employees/' . $empId);
+    }
+
+
+    // POST /employees/{id}/education
+    public function addEducation(string $id): void {
+        $this->requireAuth();
+        CSRF::protect();
+        $empId = (int)$id;
+
+        $employee = $this->employeeModel->find($empId);
+        if (!$employee || (!Auth::isHR() && (int)$employee['user_id'] !== Auth::id())) {
+            $this->flash('error', 'Access Denied or Employee not found.');
+            $this->redirect('/employees/' . $empId);
+            return;
+        }
+
+        $this->employeeModel->addEducationRecord(
+            $empId, 
+            $this->input('degree'), 
+            $this->input('institution'), 
+            $this->input('year_graduated')
+        );
+
+        $this->flash('success', 'Education record added.');
+        $this->redirect('/employees/' . $empId);
+    }
+
+    // POST /employees/{id}/family
+    public function addFamily(string $id): void {
+        $this->requireAuth();
+        CSRF::protect();
+        $empId = (int)$id;
+
+        $employee = $this->employeeModel->find($empId);
+        if (!$employee || (!Auth::isHR() && (int)$employee['user_id'] !== Auth::id())) {
+            $this->flash('error', 'Access Denied or Employee not found.');
+            $this->redirect('/employees/' . $empId);
+            return;
+        }
+
+        $this->employeeModel->addFamilyRecord(
+            $empId, 
+            $this->input('relation'), 
+            $this->input('full_name'), 
+            $this->input('contact_number') ?: null,
+            $this->input('occupation') ?: null
+        );
+
+        $this->flash('success', 'Family record added.');
+        $this->redirect('/employees/' . $empId);
+    }
+
+    // POST /employees/{id}/certificate
+    public function addCertificate(string $id): void {
+        $this->requireAuth();
+        CSRF::protect();
+        $empId = (int)$id;
+
+        $employee = $this->employeeModel->find($empId);
+        if (!$employee || (!Auth::isHR() && (int)$employee['user_id'] !== Auth::id())) {
+            $this->flash('error', 'Access Denied or Employee not found.');
+            $this->redirect('/employees/' . $empId);
+            return;
+        }
+
+        $this->employeeModel->addCertificateRecord(
+            $empId, 
+            $this->input('certificate_name'), 
+            $this->input('issuing_organization'), 
+            $this->input('issue_date')
+        );
+
+        $this->flash('success', 'Certificate added.');
+        $this->redirect('/employees/' . $empId);
+    }
+
+    // GET /employees/{id}/id-card
+   // GET /employees/{id}/id-card
+  // GET /employees/{id}/id-card
+    public function idCard(string $id): void {
+        $this->requireAuth();
+        $empId = (int)$id;
+
+        $employee = $this->employeeModel->findWithDepartment($empId);
+        if (!$employee) {
+            $this->flash('error', 'Employee not found.');
+            $this->redirect('/employees');
+        }
+
+        // Fetch the linked user account
+        $user = $employee['user_id'] ? $this->userModel->find($employee['user_id']) : null;
+        
+        // RETROACTIVE FIX: If employee has no account, or no token, generate it now!
+        if (!$user || empty($user['login_token'])) {
+            $loginToken = bin2hex(random_bytes(20));
+            
+            if (!$user) {
+                // Auto-create missing user account for older employees
+                $username = strtolower(explode('@', $employee['email'])[0]) . rand(10, 99);
+                
+                // Fallback if username somehow exists
+                if ($this->userModel->usernameExists($username)) {
+                    $username .= rand(100, 999);
+                }
+
+                $userId = $this->userModel->create([
+                    'role_id'     => 3, // Employee role
+                    'username'    => $username,
+                    'email'       => $employee['email'],
+                    'password'    => Auth::hash('Employee@123'),
+                    'login_token' => $loginToken
+                ]);
+                
+                // Link the newly created user back to the employee profile
+                $this->employeeModel->update($empId, ['user_id' => $userId]);
+            } else {
+                // User exists, but they just need a token updated
+                $this->userModel->update($user['id'], ['login_token' => $loginToken]);
+            }
+            $qrToken = $loginToken;
+        } else {
+            $qrToken = $user['login_token'];
+        }
+
+        $qrLink = $qrToken ? BASE_URL . '/qr-login?token=' . $qrToken : '';
+
+        $this->view('employees.id_card', [
+            'layout'   => 'print',
+            'title'    => 'ID Card - ' . $employee['first_name'],
+            'employee' => $employee,
+            'qrLink'   => $qrLink
+        ]);
     }
 }
 

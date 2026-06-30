@@ -15,3 +15,29 @@
         </div>
     </div>
 </div>
+
+<script>
+// Define center coordinates for each Barangay
+const barangayCoords = {
+    "Tetuan": [6.9155, 122.0722],
+    "Pasonanca": [6.9350, 122.0680],
+    "Guiwan": [6.9120, 122.0850]
+};
+
+function updateMapLocation() {
+    const brgy = document.getElementById('barangaySelect').value;
+    if (barangayCoords[brgy]) {
+        const [lat, lng] = barangayCoords[brgy];
+        
+        // 1. Update hidden inputs if you have them
+        // 2. If you are in the Create/Edit form, you might want to 
+        //    show a mini-map preview that centers on this choice
+        console.log("Map will center to: " + lat + ", " + lng);
+        
+        // Optional: If you use Leaflet in your form, trigger a map update here
+        if (typeof map !== 'undefined') {
+            map.setView([lat, lng], 15);
+        }
+    }
+}
+</script>

@@ -43,119 +43,116 @@
         </div>
     </div>
 
-    <!-- Chart + Recent Employees -->
-    <div class="dashboard-grid">
 
-        <!-- Department Breakdown Chart -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Employees by Department</h2>
-            </div>
-            <div class="card-body">
-                <canvas id="deptChart" height="260"></canvas>
-            </div>
+
+
+
+
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+   <?php if (Auth::check()): ?> 
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <h2 class="card-title">Live Workforce Map Tracker</h2>
+            <button onclick="window.location.reload()" class="btn btn-secondary btn-sm">Refresh Locations</button>
         </div>
-
-        <!-- Recent Employees -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Recently Added</h2>
-                <a href="<?= BASE_URL ?>/employees" class="card-link">View all →</a>
-            </div>
-            <div class="card-body p-0">
-                <ul class="recent-list">
-                    <?php foreach ($recentEmployees as $emp): ?>
-                    <li class="recent-item">
-                        <div class="emp-avatar">
-                            <?= strtoupper(substr($emp['first_name'], 0, 1) . substr($emp['last_name'], 0, 1)) ?>
-                        </div>
-                        <div class="emp-info">
-                            <span class="emp-name">
-                                <a href="<?= BASE_URL ?>/employees/<?= $emp['id'] ?>">
-                                    <?= htmlspecialchars($emp['first_name'] . ' ' . $emp['last_name']) ?>
-                                </a>
-                            </span>
-                            <span class="emp-meta"><?= htmlspecialchars($emp['position'] ?? '—') ?> · <?= htmlspecialchars($emp['department_name'] ?? '—') ?></span>
-                        </div>
-                        <span class="badge badge-<?= $emp['status'] ?>"><?= ucfirst($emp['status']) ?></span>
-                    </li>
-                    <?php endforeach; ?>
-                    <?php if (empty($recentEmployees)): ?>
-                    <li class="recent-empty">No employees yet.</li>
-                    <?php endif; ?>
-                </ul>
-            </div>
+        <div class="card-body p-0" style="position: relative;">
+            <div id="employeeMap" style="height: 500px; width: 100%; border-radius: 0 0 var(--r-lg) var(--r-lg); z-index: 1;"></div>
         </div>
-
     </div>
-</div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the map (Default center: Zamboanga City)
+            var map = L.map('employeeMap').setView([6.9214, 122.0790], 12);
 
-<script>
-(function() {
-    const deptData = <?= json_encode($deptBreakdown) ?>;
-    const labels   = deptData.map(d => d.department);
-    const values   = deptData.map(d => parseInt(d.total));
-    const colors   = ['#4f46e5','#10b981','#f59e0b','#ef4444','#7c3aed','#0891b2','#db2777'];
+            // Add the OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-    const canvas = document.getElementById('deptChart');
-    if (!canvas || !deptData.length) {
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            canvas.width = canvas.offsetWidth || 400;
-            canvas.height = 260;
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '14px Plus Jakarta Sans, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('No department data yet.', canvas.width / 2, 130);
-        }
-        return;
-    }
+            // Fetch the locations passed from the controller
+            var locations = <?= json_encode($locations ?? []) ?>;
+            var routingControl = null; // Variable to store our active route
 
-    const ctx    = canvas.getContext('2d');
-    const W      = canvas.offsetWidth || 400;
-    const H      = 260;
-    canvas.width  = W;
-    canvas.height = H;
+            // Function to draw route from Admin to Employee
+            window.routeTo = function(destLat, destLng) {
+                // Remove existing route if there is one
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                }
+                
+                // Get Admin's current location as the starting point
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        var startLat = position.coords.latitude;
+                        var startLng = position.coords.longitude;
+                        
+                        routingControl = L.Routing.control({
+                            waypoints: [
+                                L.latLng(startLat, startLng), // Start (Admin)
+                                L.latLng(destLat, destLng)    // End (Employee)
+                            ],
+                            routeWhileDragging: false,
+                            addWaypoints: false,
+                            show: false, // Hides the step-by-step text box to keep the UI clean
+                            lineOptions: {
+                                styles: [{color: '#2563eb', weight: 4}] // Blue route line
+                            }
+                        }).addTo(map);
+                    }, function(error) {
+                        alert("Could not get your current location for routing. Please ensure GPS is enabled.");
+                    }, { enableHighAccuracy: true });
+                }
+            };
 
-    const barH   = 30;
-    const gap    = 14;
-    const labelW = 130;
-    const padX   = 16;
-    const padY   = 12;
-    const maxVal = Math.max(...values, 1);
+            // Plot markers for each employee
+            locations.forEach(function(emp) {
+                if (emp.latitude && emp.longitude) {
+                    // Determine Status Color Ring
+                    var statusColor = emp.availability_status === 'available' ? '#10b981' : (emp.availability_status === 'out-of-town' ? '#f59e0b' : '#ef4444');
+                    
+                    // Build the Custom Profile Picture Marker
+                    var picUrl = emp.profile_picture ? `${BASE_URL}/assets/images/profiles/${emp.profile_picture}` : '';
+                    var iconHtml = '';
+                    
+                    if (picUrl) {
+                        // User has a profile picture
+                        iconHtml = `<div style="width: 36px; height: 36px; border-radius: 50%; border: 3px solid ${statusColor}; background-image: url('${picUrl}'); background-size: cover; background-position: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);"></div>`;
+                    } else {
+                        // Fallback to initials if no picture
+                        var initials = emp.first_name.charAt(0) + emp.last_name.charAt(0);
+                        iconHtml = `<div style="width: 36px; height: 36px; border-radius: 50%; border: 3px solid ${statusColor}; background-color: #f1f5f9; color: #1e293b; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">${initials.toUpperCase()}</div>`;
+                    }
 
-    ctx.clearRect(0, 0, W, H);
+                    var customIcon = L.divIcon({
+                        className: 'custom-profile-pin',
+                        html: iconHtml,
+                        iconSize: [42, 42],
+                        iconAnchor: [21, 21] // Centers the pin perfectly
+                    });
 
-    labels.forEach((label, i) => {
-        const y       = padY + i * (barH + gap);
-        const barMaxW = W - labelW - padX * 2 - 44;
-        const barW    = (values[i] / maxVal) * barMaxW;
-        const color   = colors[i % colors.length];
+                    // Build the Popup Content (Now with a "Get Route" button)
+                    var popupContent = `
+                        <div style="text-align:center; min-width: 140px;">
+                            <strong style="font-size: 14px;">${emp.first_name} ${emp.last_name}</strong><br>
+                            <span style="font-size:11px; color:#666; display:block; margin-bottom: 4px;">${emp.department_name || 'No Dept'}</span>
+                            <span class="badge badge-${emp.availability_status}">${emp.availability_status}</span><br>
+                            <span style="font-size:10px; color:#999; display:block; margin: 8px 0;">Last seen: ${emp.location_updated_at}</span>
+                            <button onclick="routeTo(${emp.latitude}, ${emp.longitude})" class="btn btn-primary btn-xs" style="width: 100%;">📍 Get Route</button>
+                        </div>
+                    `;
 
-        // Label
-        ctx.fillStyle = '#64748b';
-        ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
-        ctx.textAlign = 'right';
-        const shortLabel = label.length > 16 ? label.slice(0, 15) + '…' : label;
-        ctx.fillText(shortLabel, labelW, y + barH / 2 + 4.5);
-
-        // Background track
-        ctx.fillStyle = '#f1f5f9';
-        ctx.beginPath();
-        ctx.roundRect(labelW + padX, y, barMaxW, barH, 7);
-        ctx.fill();
-
-        // Colored bar
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.roundRect(labelW + padX, y, Math.max(barW, 8), barH, 7);
-        ctx.fill();
-
-        // Value
-        ctx.fillStyle = '#1e293b';
-        ctx.font = '600 12.5px "Plus Jakarta Sans", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(values[i], labelW + padX + Math.max(barW, 8) + 9, y + barH / 2 + 4.5);
-    });
-})();
-</script>
+                    L.marker([emp.latitude, emp.longitude], {icon: customIcon})
+                     .addTo(map)
+                     .bindPopup(popupContent);
+                }
+            });
+        });
+    </script>
+    <?php endif; ?>

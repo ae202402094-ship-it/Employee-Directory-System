@@ -21,6 +21,7 @@ class DashboardController extends Controller {
     }
 
     // GET /dashboard
+   // GET /dashboard
     public function index(): void {
         $this->requireAuth();
 
@@ -31,15 +32,18 @@ class DashboardController extends Controller {
             'new_this_month'   => $this->employeeModel->countNewThisMonth(),
         ];
 
-        // This uses the existing logic in your Employee Model
-        $deptBreakdown  = $this->employeeModel->countPerDepartment();
+        $deptBreakdown   = $this->employeeModel->countPerDepartment();
         $recentEmployees = $this->employeeModel->recent(5);
+        
+        // NEW: Fetch all employee locations for the map
+        $locations = $this->employeeModel->getAllLocations();
 
         $this->view('dashboard.index', [
             'title'           => 'Dashboard',
             'stats'           => $stats,
             'deptBreakdown'   => $deptBreakdown,
             'recentEmployees' => $recentEmployees,
+            'locations'       => $locations, // Pass locations to the view
         ]);
     }
 }

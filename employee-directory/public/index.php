@@ -34,10 +34,13 @@ if (file_exists($envFile)) {
 // Start session
 session_start();
 
+
 // ── Route Definitions ────────────────────────────────────────
 $router = new Router();
 
 // Auth
+$router->get('/qr-login', 'AuthController@qrLogin');
+
 $router->get('/login',  'AuthController@loginForm');
 $router->post('/login', 'AuthController@login');
 $router->get('/logout', 'AuthController@logout');
@@ -56,6 +59,11 @@ $router->get('/employees/{id}',          'EmployeeController@show');
 $router->get('/employees/{id}/edit',     'EmployeeController@edit');
 $router->post('/employees/{id}/update',  'EmployeeController@update');
 $router->post('/employees/{id}/delete',  'EmployeeController@delete');
+$router->post('/employees/{id}/experience', 'EmployeeController@addExperience');
+$router->get('/employees/{id}/id-card', 'EmployeeController@idCard');
+$router->post('/employees/{id}/education', 'EmployeeController@addEducation');
+$router->post('/employees/{id}/family', 'EmployeeController@addFamily');
+$router->post('/employees/{id}/certificate', 'EmployeeController@addCertificate');
 
 // Departments
 $router->get('/departments',                  'DepartmentController@index');
@@ -70,6 +78,11 @@ $router->post('/users/store',        'UserController@store');
 $router->get('/users/{id}/edit',     'UserController@edit');
 $router->post('/users/{id}/update',  'UserController@update');
 $router->post('/users/{id}/delete',  'UserController@delete');
+
+// Location Tracker API
+$router->post('/location/sync', 'LocationController@sync');
+
+
 
 // ── Dispatch ─────────────────────────────────────────────────
 $method = $_SERVER['REQUEST_METHOD'];

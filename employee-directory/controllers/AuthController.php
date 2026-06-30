@@ -75,4 +75,26 @@ class AuthController extends Controller {
         Auth::logout();
         $this->redirect('/login');
     }
+
+    // GET /qr-login?token=XYZ
+    public function qrLogin(): void {
+        $token = $this->query('token');
+        
+        if (!$token) {
+            $this->flash('error', 'Invalid or missing QR token.');
+            $this->redirect('/login');
+        }
+
+        $user = $this->userModel->findWithRoleByToken($token);
+
+        if (!$user || !$user['is_active']) {
+            $this->flash('error', 'Invalid QR code or inactive account.');
+            $this->redirect('/login');
+        }
+
+        // Log the user in
+        Auth::login($user);
+        $this->flash('success', 'Successfully logged in via ID Card Scan!');
+        $this->redirect('/dashboard');
+    }
 }
