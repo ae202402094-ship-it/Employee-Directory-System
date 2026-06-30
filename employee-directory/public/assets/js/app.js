@@ -1,6 +1,3 @@
-// ============================================================
-// app.js — Employee Directory System
-// ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
