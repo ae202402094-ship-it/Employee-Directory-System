@@ -24,6 +24,46 @@ class DashboardController extends Controller {
     public function index(): void {
         $this->requireAuth();
 
+        $db = Database::getInstance();
+        
+        // 1. Reset employees with leave/overtime statuses if they do not have active approved logs for today
+        $db->exec("
+            UPDATE employees e 
+            SET e.availability_status = 'available' 
+            WHERE e.availability_status IN ('on-leave', 'vacation', 'overtime')
+              AND e.id NOT IN (
+                  SELECT employee_id FROM leave_requests 
+                  WHERE status = 'approved' AND start_date <= CURDATE() AND end_date >= CURDATE()
+              )
+              AND e.id NOT IN (
+                  SELECT employee_id FROM overtime_logs 
+                  WHERE status = 'approved' AND ot_date = CURDATE()
+              )
+        ");
+
+        // 2. Sync approved leaves covering today to availability_status
+        $activeLeaves = $db->query("
+            SELECT employee_id, leave_type FROM leave_requests 
+            WHERE status = 'approved' AND start_date <= CURDATE() AND end_date >= CURDATE()
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($activeLeaves as $leave) {
+            $statusVal = ($leave['leave_type'] === 'vacation') ? 'vacation' : 'on-leave';
+            $db->prepare("UPDATE employees SET availability_status = ? WHERE id = ?")
+               ->execute([$statusVal, $leave['employee_id']]);
+        }
+
+        // 3. Sync approved overtime logs for today to availability_status
+        $activeOT = $db->query("
+            SELECT employee_id FROM overtime_logs 
+            WHERE status = 'approved' AND ot_date = CURDATE()
+        ")->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($activeOT as $empId) {
+            $db->prepare("UPDATE employees SET availability_status = 'overtime' WHERE id = ?")
+               ->execute([$empId]);
+        }
+
         $employee = $this->employeeModel->findByUserId(Auth::id());
         $deptBreakdown = $this->employeeModel->countPerDepartment();
 
@@ -85,7 +125,7 @@ class DashboardController extends Controller {
                 $stats['active_employees'] = $deptStats['active_employees'];
 
                 $recentEmployees = $this->employeeModel->getRecentByDepartment($deptId, 5);
-                $locations = $this->sanitizeLocations($this->employeeModel->getLocationsByDepartment($deptId));
+                $locations = $this->sanitizeLocations($this->employeeModel->getAllLocations());
             }
 
             $this->view('dashboard.index', [
@@ -117,7 +157,7 @@ class DashboardController extends Controller {
                 $deptName = $employee['department_name'];
 
                 $teamMembers = $this->employeeModel->getTeamMembers($deptId, $employee['id']);
-                $locations = $this->sanitizeLocations($this->employeeModel->getLocationsByDepartment($deptId));
+                $locations = $this->sanitizeLocations($this->employeeModel->getAllLocations());
             }
 
             $this->view('dashboard.index', [

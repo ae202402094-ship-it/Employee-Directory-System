@@ -17,17 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── 2. Background Location Sync ────────────────────────
-    if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
+    if ("geolocation" in navigator && typeof IS_TRACKING_ACTIVE !== 'undefined' && IS_TRACKING_ACTIVE) {
+        navigator.geolocation.watchPosition(
             (pos) => {
                 fetch(`${BASE_URL}/location/sync`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, status: 'available' })
+                    body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })
                 }).catch(console.error);
             },
-            () => {}, // Silent failure
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            (err) => {
+                console.warn("GPS tracking error: ", err);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     }
 

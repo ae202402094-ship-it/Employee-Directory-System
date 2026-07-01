@@ -84,6 +84,30 @@ $router->post('/users/{id}/delete',  'UserController@delete');
 // Location Tracker API
 $router->post('/location/sync', 'LocationController@sync');
 
+// Leave Request Workflow
+$router->get('/leaves', 'LeaveController@index');
+$router->post('/leaves', 'LeaveController@store');
+$router->post('/leaves/{id}/approve', 'LeaveController@approve');
+$router->post('/leaves/{id}/reject', 'LeaveController@reject');
+
+// Overtime logs Workflow
+$router->get('/overtime', 'OvertimeController@index');
+$router->post('/overtime', 'OvertimeController@store');
+$router->post('/overtime/{id}/approve', 'OvertimeController@approve');
+$router->post('/overtime/{id}/reject', 'OvertimeController@reject');
+
+// Attendance logs & HTML5 QR Scanner
+$router->get('/attendance/scanner', 'AttendanceController@scanner');
+$router->post('/attendance/check-in', 'AttendanceController@checkIn');
+$router->get('/attendance/logs', 'AttendanceController@logs');
+
+// Geofencing Coordinates Settings
+$router->get('/settings/geofence', 'SettingsController@geofence');
+$router->post('/settings/geofence', 'SettingsController@saveGeofence');
+
+// Audit Trail Logs
+$router->get('/audit-logs', 'AuditController@index');
+
 
 
 // ── Dispatch ─────────────────────────────────────────────────

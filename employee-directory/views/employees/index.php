@@ -44,6 +44,24 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <div class="filter-group">
+            <input
+                type="search"
+                name="skill"
+                class="form-control"
+                placeholder="Search by skill..."
+                value="<?= htmlspecialchars($filters['skill'] ?? '') ?>"
+            >
+        </div>
+        <div class="filter-group filter-group-sm">
+            <select name="proficiency" class="form-control form-select">
+                <option value="">All Levels</option>
+                <option value="beginner"     <?= ($filters['proficiency'] ?? '') === 'beginner'     ? 'selected' : '' ?>>Beginner</option>
+                <option value="intermediate" <?= ($filters['proficiency'] ?? '') === 'intermediate' ? 'selected' : '' ?>>Intermediate</option>
+                <option value="advanced"     <?= ($filters['proficiency'] ?? '') === 'advanced'     ? 'selected' : '' ?>>Advanced</option>
+                <option value="expert"       <?= ($filters['proficiency'] ?? '') === 'expert'       ? 'selected' : '' ?>>Expert</option>
+            </select>
+        </div>
         <div class="filter-actions">
             <button type="submit" class="btn btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>

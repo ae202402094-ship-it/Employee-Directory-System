@@ -8,6 +8,7 @@ require_once BASE_PATH . '/models/Employee.php';
 require_once BASE_PATH . '/models/Department.php';
 require_once BASE_PATH . '/helpers/CSRF.php';
 require_once BASE_PATH . '/models/User.php';
+require_once BASE_PATH . '/models/ActivityLog.php';
 
 class EmployeeController extends Controller {
 
@@ -25,11 +26,43 @@ class EmployeeController extends Controller {
     public function index(): void {
         $this->requireAuth();
 
-        $search     = $this->query('search', '');
-        $status     = $this->query('status', '');
-        $deptId     = (int)$this->query('department', 0);
+        $search      = $this->query('search', '');
+        $status      = $this->query('status', '');
+        $deptId      = (int)$this->query('department', 0);
+        $skill       = $this->query('skill', '');
+        $proficiency = $this->query('proficiency', '');
 
-        if ($search || $status || $deptId) {
+        if ($skill || $proficiency) {
+            $sql = "SELECT DISTINCT e.*, d.name AS department_name 
+                    FROM employees e 
+                    LEFT JOIN departments d ON d.id = e.department_id
+                    JOIN employee_skills s ON s.employee_id = e.id
+                    WHERE 1=1";
+            $params = [];
+            if ($skill) {
+                $sql .= " AND s.skill_name LIKE ?";
+                $params[] = '%' . $skill . '%';
+            }
+            if ($proficiency) {
+                $sql .= " AND s.proficiency = ?";
+                $params[] = $proficiency;
+            }
+            if ($status) {
+                $sql .= " AND e.status = ?";
+                $params[] = $status;
+            }
+            if ($deptId) {
+                $sql .= " AND e.department_id = ?";
+                $params[] = $deptId;
+            }
+            if ($search) {
+                $sql .= " AND (e.first_name LIKE ? OR e.last_name LIKE ? OR e.employee_number LIKE ?)";
+                $params[] = '%' . $search . '%';
+                $params[] = '%' . $search . '%';
+                $params[] = '%' . $search . '%';
+            }
+            $employees = $this->employeeModel->query($sql, $params);
+        } elseif ($search || $status || $deptId) {
             $employees = $this->employeeModel->search(
                 $search,
                 $status ?: null,
@@ -45,7 +78,13 @@ class EmployeeController extends Controller {
             'title'       => 'Employees',
             'employees'   => $employees,
             'departments' => $departments,
-            'filters'     => ['search' => $search, 'status' => $status, 'department' => $deptId],
+            'filters'     => [
+                'search'      => $search,
+                'status'      => $status,
+                'department'  => $deptId,
+                'skill'       => $skill,
+                'proficiency' => $proficiency
+            ],
         ]);
     }
 
@@ -216,6 +255,7 @@ class EmployeeController extends Controller {
         // 3. Link the new user account to the employee profile, then save the employee
         $data['user_id'] = $userId;
         $this->employeeModel->create($data);
+        ActivityLog::log('CREATE_EMPLOYEE', "Created new employee profile: {$data['first_name']} {$data['last_name']} (#{$data['employee_number']})");
         $this->flash('success', 'Employee added successfully.');
         $this->redirect('/employees');
     }
@@ -328,6 +368,7 @@ class EmployeeController extends Controller {
         }
 
         $this->employeeModel->update($empId, $data);
+        ActivityLog::log('UPDATE_EMPLOYEE', "Updated details for employee #{$empId}: {$data['first_name']} {$data['last_name']}");
         $this->flash('success', 'Employee updated successfully.');
         $this->redirect('/employees/' . $empId);
     }
@@ -339,6 +380,7 @@ class EmployeeController extends Controller {
         CSRF::protect();
 
         $this->employeeModel->delete((int)$id);
+        ActivityLog::log('DELETE_EMPLOYEE', "Deleted employee profile ID #{$id}");
         $this->flash('success', 'Employee deleted.');
         $this->redirect('/employees');
     }

@@ -278,6 +278,22 @@ class Employee extends Model {
         );
     }
 
+    public function findByLoginToken(string $token): ?array {
+        return $this->queryOne(
+            "SELECT e.* FROM employees e 
+             JOIN users u ON u.id = e.user_id 
+             WHERE u.login_token = ? LIMIT 1",
+            [$token]
+        );
+    }
+
+    public function findByEmployeeNumber(string $empNum): ?array {
+        return $this->queryOne(
+            "SELECT * FROM employees WHERE employee_number = ? LIMIT 1",
+            [$empNum]
+        );
+    }
+
     // Get employees by availability status
     public function getEmployeesByAvailability(string $status): array {
         return $this->query(
@@ -290,6 +306,14 @@ class Employee extends Model {
     public function getEmployeesOnLeave(): array {
         return $this->query(
             "SELECT e.*, d.name AS department_name FROM employees e LEFT JOIN departments d ON d.id = e.department_id WHERE e.availability_status IN ('on-leave', 'vacation', 'holiday') ORDER BY e.last_name ASC"
+        );
+    }
+
+    // Update employee availability status
+    public function updateAvailabilityStatus(int $employeeId, string $status): bool {
+        return $this->execute(
+            "UPDATE employees SET availability_status = ? WHERE id = ?",
+            [$status, $employeeId]
         );
     }
 }
