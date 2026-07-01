@@ -33,35 +33,7 @@ class EmployeeController extends Controller {
         $proficiency = $this->query('proficiency', '');
 
         if ($skill || $proficiency) {
-            $sql = "SELECT DISTINCT e.*, d.name AS department_name 
-                    FROM employees e 
-                    LEFT JOIN departments d ON d.id = e.department_id
-                    JOIN employee_skills s ON s.employee_id = e.id
-                    WHERE 1=1";
-            $params = [];
-            if ($skill) {
-                $sql .= " AND s.skill_name LIKE ?";
-                $params[] = '%' . $skill . '%';
-            }
-            if ($proficiency) {
-                $sql .= " AND s.proficiency = ?";
-                $params[] = $proficiency;
-            }
-            if ($status) {
-                $sql .= " AND e.status = ?";
-                $params[] = $status;
-            }
-            if ($deptId) {
-                $sql .= " AND e.department_id = ?";
-                $params[] = $deptId;
-            }
-            if ($search) {
-                $sql .= " AND (e.first_name LIKE ? OR e.last_name LIKE ? OR e.employee_number LIKE ?)";
-                $params[] = '%' . $search . '%';
-                $params[] = '%' . $search . '%';
-                $params[] = '%' . $search . '%';
-            }
-            $employees = $this->employeeModel->query($sql, $params);
+            $employees = $this->employeeModel->searchBySkills($skill, $proficiency, $status, $deptId, $search);
         } elseif ($search || $status || $deptId) {
             $employees = $this->employeeModel->search(
                 $search,

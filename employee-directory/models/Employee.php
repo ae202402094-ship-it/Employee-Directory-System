@@ -316,4 +316,37 @@ class Employee extends Model {
             [$status, $employeeId]
         );
     }
+
+    // Search employees by skill name, proficiency level, status, department, or term
+    public function searchBySkills(string $skill, string $proficiency, string $status, int $deptId, string $search): array {
+        $sql = "SELECT DISTINCT e.*, d.name AS department_name 
+                FROM employees e 
+                LEFT JOIN departments d ON d.id = e.department_id
+                JOIN employee_skills s ON s.employee_id = e.id
+                WHERE 1=1";
+        $params = [];
+        if ($skill) {
+            $sql .= " AND s.skill_name LIKE ?";
+            $params[] = '%' . $skill . '%';
+        }
+        if ($proficiency) {
+            $sql .= " AND s.proficiency = ?";
+            $params[] = $proficiency;
+        }
+        if ($status) {
+            $sql .= " AND e.status = ?";
+            $params[] = $status;
+        }
+        if ($deptId) {
+            $sql .= " AND e.department_id = ?";
+            $params[] = $deptId;
+        }
+        if ($search) {
+            $sql .= " AND (e.first_name LIKE ? OR e.last_name LIKE ? OR e.employee_number LIKE ?)";
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+            $params[] = '%' . $search . '%';
+        }
+        return $this->query($sql, $params);
+    }
 }

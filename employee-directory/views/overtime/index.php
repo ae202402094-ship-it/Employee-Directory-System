@@ -33,7 +33,10 @@
         </div>
 
         <!-- Right: OT Approval Workflow Panel (Admins/HR/Supervisors only) -->
-        <?php if (Auth::isAdmin() || Auth::isHR() || Auth::isDeptHead()): ?>
+        <?php 
+        $isHRDept = isset($employee) && (int)($employee['department_id'] ?? 0) === 2;
+        if (Auth::isAdmin() || Auth::isHR() || Auth::isDeptHead() || $isHRDept): 
+        ?>
         <div style="flex: 2; min-width: 500px;">
             <div class="card">
                 <div class="card-header">

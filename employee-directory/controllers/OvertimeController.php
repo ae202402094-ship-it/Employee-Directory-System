@@ -16,13 +16,13 @@ class OvertimeController extends Controller {
         
         $empModel = new Employee();
         $employee = $empModel->findByUserId(Auth::id());
-        
+        $isHRDept = $employee && (int)$employee['department_id'] === 2;
         $otModel = new OvertimeLog();
         
         $pendingLogs = [];
         $historyLogs = [];
         
-        if (Auth::isAdmin() || Auth::isHR()) {
+        if (Auth::isAdmin() || Auth::isHR() || $isHRDept) {
             $pendingLogs = $otModel->getPendingLogs();
             $historyLogs = $otModel->getAllHistory();
         } else {
@@ -92,7 +92,12 @@ class OvertimeController extends Controller {
 
     public function approve(string $id): void {
         $this->requireAuth();
-        if (!Auth::isAdmin() && !Auth::isHR() && !Auth::isDeptHead()) {
+        
+        $empModel = new Employee();
+        $approverEmp = $empModel->findByUserId(Auth::id());
+        $isHRDept = $approverEmp && (int)$approverEmp['department_id'] === 2;
+
+        if (!Auth::isAdmin() && !Auth::isHR() && !Auth::isDeptHead() && !$isHRDept) {
             $this->redirect('/overtime');
         }
 
@@ -102,7 +107,6 @@ class OvertimeController extends Controller {
             $this->redirect('/overtime');
         }
 
-        $empModel = new Employee();
         $targetEmp = $empModel->find($log['employee_id']);
         if (!$targetEmp || !$this->canApprove($targetEmp)) {
             $this->flash('error', 'You are not authorized to approve this employee\'s request.');
@@ -123,7 +127,12 @@ class OvertimeController extends Controller {
 
     public function reject(string $id): void {
         $this->requireAuth();
-        if (!Auth::isAdmin() && !Auth::isHR() && !Auth::isDeptHead()) {
+        
+        $empModel = new Employee();
+        $approverEmp = $empModel->findByUserId(Auth::id());
+        $isHRDept = $approverEmp && (int)$approverEmp['department_id'] === 2;
+
+        if (!Auth::isAdmin() && !Auth::isHR() && !Auth::isDeptHead() && !$isHRDept) {
             $this->redirect('/overtime');
         }
 
@@ -133,7 +142,6 @@ class OvertimeController extends Controller {
             $this->redirect('/overtime');
         }
 
-        $empModel = new Employee();
         $targetEmp = $empModel->find($log['employee_id']);
         if (!$targetEmp || !$this->canApprove($targetEmp)) {
             $this->flash('error', 'You are not authorized to reject this employee\'s request.');
@@ -162,6 +170,10 @@ class OvertimeController extends Controller {
     }
 
     private function canApprove(array $targetEmp): bool {
+        if ((int)($targetEmp['user_id'] ?? 0) === (int)Auth::id()) {
+            return false;
+        }
+
         if (Auth::isAdmin() || Auth::isHR()) {
             return true;
         }
